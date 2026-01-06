@@ -27,9 +27,12 @@ fn extract_frontmatter_str(content: &str) -> Option<&str> {
     }
 
     let after_first = &content[FRONTMATTER_DELIMITER.len()..];
-    let after_first = after_first.strip_prefix('\n').or_else(|| after_first.strip_prefix("\r\n"))?;
+    let after_first = after_first
+        .strip_prefix('\n')
+        .or_else(|| after_first.strip_prefix("\r\n"))?;
 
-    let end_pos = after_first.find(&format!("\n{}", FRONTMATTER_DELIMITER))
+    let end_pos = after_first
+        .find(&format!("\n{}", FRONTMATTER_DELIMITER))
         .or_else(|| after_first.find(&format!("\r\n{}", FRONTMATTER_DELIMITER)))?;
 
     Some(&after_first[..end_pos])
@@ -50,13 +53,14 @@ pub fn parse_file<P: AsRef<Path>>(path: P) -> Result<Frontmatter> {
 pub fn parse_content<P: AsRef<Path>>(path: P, content: &str) -> Result<Frontmatter> {
     let path = path.as_ref();
 
-    let frontmatter_str =
-        extract_frontmatter_str(content).ok_or_else(|| FrontmatterError::NoFrontmatter(path.to_path_buf()))?;
+    let frontmatter_str = extract_frontmatter_str(content)
+        .ok_or_else(|| FrontmatterError::NoFrontmatter(path.to_path_buf()))?;
 
-    let data: Value = serde_yaml::from_str(frontmatter_str).map_err(|e| FrontmatterError::YamlError {
-        path: path.to_path_buf(),
-        source: e,
-    })?;
+    let data: Value =
+        serde_yaml::from_str(frontmatter_str).map_err(|e| FrontmatterError::YamlError {
+            path: path.to_path_buf(),
+            source: e,
+        })?;
 
     Ok(Frontmatter {
         path: path.to_path_buf(),
@@ -74,18 +78,16 @@ pub fn parse_directory<P: AsRef<Path>>(dir: P, recursive: bool) -> Vec<Result<Fr
 
     walker
         .into_iter()
-        .filter_map(|entry| {
-            match entry {
-                Ok(e) => {
-                    let path = e.path();
-                    if path.is_file() && is_markdown_file(path) {
-                        Some(parse_file(path))
-                    } else {
-                        None
-                    }
+        .filter_map(|entry| match entry {
+            Ok(e) => {
+                let path = e.path();
+                if path.is_file() && is_markdown_file(path) {
+                    Some(parse_file(path))
+                } else {
+                    None
                 }
-                Err(e) => Some(Err(FrontmatterError::WalkDirError(e))),
             }
+            Err(e) => Some(Err(FrontmatterError::WalkDirError(e))),
         })
         .collect()
 }

@@ -33,26 +33,22 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::File { path } => {
-            match parse_file(&path) {
-                Ok(fm) => {
-                    match fm.to_json() {
-                        Ok(json) => {
-                            println!("{}", json);
-                            ExitCode::SUCCESS
-                        }
-                        Err(e) => {
-                            eprintln!("Error serializing to JSON: {}", e);
-                            ExitCode::FAILURE
-                        }
-                    }
+        Commands::File { path } => match parse_file(&path) {
+            Ok(fm) => match fm.to_json() {
+                Ok(json) => {
+                    println!("{}", json);
+                    ExitCode::SUCCESS
                 }
                 Err(e) => {
-                    eprintln!("Error: {}", e);
+                    eprintln!("Error serializing to JSON: {}", e);
                     ExitCode::FAILURE
                 }
+            },
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                ExitCode::FAILURE
             }
-        }
+        },
         Commands::Dir { path, recursive } => {
             let results = parse_directory(&path, recursive);
             let mut has_errors = false;
